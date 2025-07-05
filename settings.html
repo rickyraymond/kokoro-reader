@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>TTS Settings</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 10px;
+    }
+
+    label {
+      display: block;
+      margin: 8px 0;
+    }
+
+    select,
+    input {
+      margin-left: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Kokoro TTS Settings</h2>
+  <label>Device:
+    <select id="device-select">
+      <option value="webgpu">WebGPU</option>
+      <option value="wasm">WASM</option>
+    </select>
+  </label>
+  <label>Precision (dtype):
+    <select id="dtype-select">
+      <option value="fp32">FP32</option>
+      <option value="fp16">FP16</option>
+      <option value="q8">Q8</option>
+      <option value="q4">Q4</option>
+      <option value="q4f16">Q4F16</option>
+    </select>
+  </label>
+  <label>Voice:
+    <select id="voice-select">
+      <option>Loading voices...</option>
+    </select>
+  </label>
+  <script type="module" src="/settings.js"></script>
+
+</body>
+
+</html>

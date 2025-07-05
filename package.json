@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "kokoro-js": "^1.2.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.5",
+    "vite": "^7.0.2",
+    "vite-plugin-static-copy": "^3.1.0"
+  }
+}

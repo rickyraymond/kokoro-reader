@@ -1,0 +1,43 @@
+{
+    "manifest_version": 3,
+    "name": "Kokoro TTS Player",
+    "version": "0.1.0",
+    "description": "Local Kokoro TTS player for reading webpages aloud.",
+    "permissions": [
+        "storage",
+        "tabs",
+        "activeTab",
+        "scripting",
+        "contextMenus"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_popup": "player.html",
+        "default_icon": {
+            "128": "/icons/kokoro.png"
+        }
+    },
+    "options_page": "settings.html",
+    "icons": {
+        "128": "/icons/kokoro.png"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "kokoro-Cyle7ZZt.js",
+                "ort-wasm-simd-threaded.jsep-*.wasm"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
+    "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  }
+}
