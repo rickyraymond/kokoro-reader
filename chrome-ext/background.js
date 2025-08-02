@@ -31,8 +31,8 @@ async function getSelectedOrPageText(tabId, selectionText) {
  * Opens the small player window and hands the chosen text to it
  * via chrome.storage.local (key: "currentText").
  */
-async function openPlayerWithText(text) {
-  await chrome.storage.local.set({ currentText: text });
+async function openPlayerWithText(text, tabId) {
+  await chrome.storage.local.set({ currentText: text, sourceTabId: tabId });
 
   // Small popup window (feel free to tweak dimensions)
   await chrome.windows.create({
@@ -48,7 +48,7 @@ async function openPlayerWithText(text) {
    ───────────────────────────── */
 chrome.action.onClicked.addListener(async (tab) => {
   const text = await getSelectedOrPageText(tab.id);
-  await openPlayerWithText(text);
+  await openPlayerWithText(text, tab.id);
 });
 
 /* ─────────────────────────────
@@ -58,7 +58,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== "kokoro-read-selection") return;
 
   const text = await getSelectedOrPageText(tab.id, info.selectionText);
-  await openPlayerWithText(text);
+  await openPlayerWithText(text, tab.id);
 });
 
 /* ─────────────────────────────
