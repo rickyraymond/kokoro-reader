@@ -20,11 +20,22 @@
 
 <body>
   <h3>Speech Output</h3>
-  <button id="play">Play</button>
-  <button id="pause">Pause</button>
-  <button id="save">Save WAV</button>
-  <div id="status">Loading...</div>
+  <audio id="audio" controls style="width:100%"></audio>
+  <div>
+    <button id="restart">Restart</button>
+    <label for="volume">Volume:</label>
+    <input id="volume" type="range" min="0" max="1" step="0.01" value="1">
+    <label for="speed">Speed:</label>
+    <select id="speed">
+      <option value="0.75">0.75x</option>
+      <option value="1" selected>1x</option>
+      <option value="1.5">1.5x</option>
+    </select>
+    <button id="save">Save WAV</button>
+  </div>
+  <div id="status">Loading...</div>
 
 </body>
+
 
 </html>
