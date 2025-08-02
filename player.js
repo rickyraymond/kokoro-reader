@@ -4,6 +4,7 @@ import { KokoroTTS } from 'kokoro-js';
 
 let audioElement = null;
 let audioBlobUrl = null;
+let sourceTabId = null;
 
 function arrayBufferToBase64(buffer) {
     let binary = '';
@@ -49,11 +50,18 @@ async function generateSpeech(text, voice, dtype, device) {
     return audio.toWav();
 }
 
+function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     const status = document.getElementById("status");
     const progress = document.getElementById("progress");
     const volume = document.getElementById("volume");
     const speed = document.getElementById("speed");
+    const timeDisplay = document.getElementById("time");
 
     const {
         currentText,
@@ -62,6 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         device,
         cachedAudio,
         cachedText,
+        sourceTabId: storedTabId,
     } = await chrome.storage.local.get([
         "currentText",
         "voice",
@@ -69,7 +78,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         "device",
         "cachedAudio",
         "cachedText",
+        "sourceTabId",
     ]);
+
+    sourceTabId = storedTabId;
 
     if (!currentText) {
         status.textContent = "No text found.";
@@ -108,13 +120,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     audioElement.addEventListener('loadedmetadata', () => {
         progress.max = audioElement.duration;
+        timeDisplay.textContent = `0:00/${formatTime(audioElement.duration)}`;
         status.textContent = "Ready.";
     });
     audioElement.addEventListener('timeupdate', () => {
         progress.value = audioElement.currentTime;
+        timeDisplay.textContent = `${formatTime(audioElement.currentTime)}/${formatTime(audioElement.duration)}`;
     });
     progress.addEventListener('input', () => {
-        if (audioElement) audioElement.currentTime = progress.value;
+        if (audioElement) {
+            audioElement.currentTime = progress.value;
+            timeDisplay.textContent = `${formatTime(audioElement.currentTime)}/${formatTime(audioElement.duration)}`;
+        }
     });
     volume.addEventListener('input', () => {
         if (audioElement) audioElement.volume = volume.value;
@@ -135,6 +152,20 @@ document.getElementById("restart").onclick = () => {
     if (audioElement) {
         audioElement.currentTime = 0;
         audioElement.play();
+    }
+};
+document.getElementById("reread").onclick = async () => {
+    if (!sourceTabId) return;
+    const [{ result }] = await chrome.scripting.executeScript({
+        target: { tabId: sourceTabId },
+        func: () => {
+            const sel = window.getSelection().toString().trim();
+            return sel || document.body.innerText || document.title;
+        }
+    });
+    if (result) {
+        await chrome.storage.local.set({ currentText: result, cachedAudio: null, cachedText: null });
+        window.location.reload();
     }
 };
 // Save handler: triggers download of WAV
