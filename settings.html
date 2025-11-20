@@ -23,11 +23,16 @@
 </head>
 
 <body>
-  <h2>Kokoro TTS Settings</h2>
+  <h2>MeloTTS Settings</h2>
   <label>Device:
     <select id="device-select">
       <option value="webgpu">WebGPU</option>
       <option value="wasm">WASM</option>
+    </select>
+  </label>
+  <label>Model:
+    <select id="model-select">
+      <option>Loading models...</option>
     </select>
   </label>
   <label>Precision (dtype):
