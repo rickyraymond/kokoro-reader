@@ -1,6 +1,53 @@
 // player.js
-import './ort-setup.js';   
-import { KokoroTTS } from 'kokoro-js';
+import './ort-setup.js';
+import { pipeline } from '@huggingface/transformers';
+
+const DEFAULT_MODEL_ID = 'onnx-community/MeloTTS-English';
+const DEFAULT_SPEAKER = 'EN-Default';
+
+function floatTo16BitPCM(float32Array) {
+    const buffer = new ArrayBuffer(float32Array.length * 2);
+    const view = new DataView(buffer);
+    for (let i = 0; i < float32Array.length; i++) {
+        let s = Math.max(-1, Math.min(1, float32Array[i]));
+        view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    return new Uint8Array(buffer);
+}
+
+function buildWavFile(samples, sampleRate) {
+    const data = floatTo16BitPCM(samples);
+    const buffer = new ArrayBuffer(44 + data.length);
+    const view = new DataView(buffer);
+    // RIFF identifier
+    view.setUint32(0, 0x52494646, false);
+    // file length minus first 8 bytes
+    view.setUint32(4, 36 + data.length, true);
+    // RIFF type 'WAVE'
+    view.setUint32(8, 0x57415645, false);
+    // format chunk identifier 'fmt '
+    view.setUint32(12, 0x666d7420, false);
+    // format chunk length
+    view.setUint32(16, 16, true);
+    // sample format (raw)
+    view.setUint16(20, 1, true);
+    // channel count
+    view.setUint16(22, 1, true);
+    // sample rate
+    view.setUint32(24, sampleRate, true);
+    // byte rate (sample rate * block align)
+    view.setUint32(28, sampleRate * 2, true);
+    // block align (channel count * bytes per sample)
+    view.setUint16(32, 2, true);
+    // bits per sample
+    view.setUint16(34, 16, true);
+    // data chunk identifier 'data'
+    view.setUint32(36, 0x64617461, false);
+    // data chunk length
+    view.setUint32(40, data.length, true);
+    new Uint8Array(buffer, 44).set(data);
+    return new Uint8Array(buffer);
+}
 
 let audioElement = null;
 let audioBlobUrl = null;
@@ -21,19 +68,18 @@ chrome.runtime.onMessage.addListener((msg) => {
     }
 });
 
-async function generateSpeech(text, voice, dtype, device) {
-    const model_id = "onnx-community/Kokoro-82M-v1.0-ONNX";
-    const tts = await KokoroTTS.from_pretrained(model_id, { dtype, device });
-    const audio = await tts.generate(text, { voice });
-    // Get raw WAV bytes
-    return audio.toWav();
+async function generateSpeech(text, modelId, speaker, dtype, device) {
+    const tts = await pipeline('text-to-speech', modelId, { dtype, device });
+    const result = await tts(text, { speaker_id: speaker });
+    const samples = result.audio instanceof Float32Array ? result.audio : new Float32Array(result.audio.data ?? result.audio);
+    return buildWavFile(samples, result.sampling_rate ?? 24000);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
     const status = document.getElementById("status");
     // Load text and settings
-    const { currentText, voice, dtype, device } = await chrome.storage.local.get(
-        ["currentText", "voice", "dtype", "device"]
+    const { currentText, voice, modelId, dtype, device } = await chrome.storage.local.get(
+        ["currentText", "voice", "modelId", "dtype", "device"]
     );
     if (!currentText) {
         status.textContent = "No text found.";
@@ -41,7 +87,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     status.textContent = "Generating audio...";
     // Generate speech audio (WAV data)
-    const wavBytes = await generateSpeech(currentText, voice || "af_heart", dtype || "q8", device || "wasm");
+    const wavBytes = await generateSpeech(
+        currentText,
+        modelId || DEFAULT_MODEL_ID,
+        voice || DEFAULT_SPEAKER,
+        dtype || "q8",
+        device || "wasm"
+    );
     const wavBlob = new Blob([wavBytes], { type: 'audio/wav' });
     audioBlobUrl = URL.createObjectURL(wavBlob);
     audioElement = new Audio(audioBlobUrl);

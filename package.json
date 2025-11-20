@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "kokoro-js": "^1.2.1"
+    "@huggingface/transformers": "^3.5.1"
   },
   "devDependencies": {
     "esbuild": "^0.25.5",
